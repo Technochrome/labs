@@ -23,7 +23,7 @@ for filedata in grid_data:
 	opencv_image = cv2.imread("./imgs/" + file, cv2.COLOR_GRAY2RGB)
 	 
 	#try to find the ball in the image
-	ball = find_ball.find_ball(opencv_image)
+	ball = find_ball.find_ball(opencv_image, debug=True)
 	expected_ball = list(map(int, filedata[1:3]))
 	
 	if ball is None:
@@ -35,11 +35,14 @@ for filedata in grid_data:
 	
 	# get radius err
 	r_err = math.fabs(ball[2] - float(filedata[3]))
+
+	correct = center_err <= center_err_thresh and r_err <= radius_err_thresh
 		
-	print("%s:  |%s - %s| = %.1f , |%s - %s| = %.1f" % (
-		file, ball[0:2], expected_ball, center_err,
-		ball[2], filedata[3], r_err))
-	if center_err <= center_err_thresh and r_err <= radius_err_thresh:
+	print("%s:  %s |%s - %s| = %.1f , |%s - %s| = %.1f" % (
+		file, '_' if correct else 'x',
+		expected_ball, ball[0:2], center_err,
+		filedata[3],   ball[2],   r_err))
+	if correct:
 		score += 1;
  
 print("score =", score)
