@@ -41,7 +41,7 @@ async def braitenberg_machine(robot: cozmo.robot.Robot):
 	robot.set_head_angle((cozmo.robot.MAX_HEAD_ANGLE + cozmo.robot.MIN_HEAD_ANGLE)/2).wait_for_completed()
 
 	args = [float(x) for x in sys.argv[1:]]
-	sensor_mapping = [args[0:2], list(reversed(args[0:2]))]
+	sensor_mapping = [args[0:3], list(reversed(args[0:2])) + args[2:]]
 	print(sensor_mapping)
 	robot.camera.set_manual_exposure(10, robot.camera.config.min_gain)
 
@@ -62,7 +62,7 @@ async def braitenberg_machine(robot: cozmo.robot.Robot):
 		# Sense the current brightness values on the right and left of the image.
 		sensor_right = sense_brightness(opencv_image, columns=np.arange(sensor_n_columns))
 		sensor_left = sense_brightness(opencv_image, columns=np.arange(w-sensor_n_columns, w))
-		sensors = [sensor_left, sensor_right]
+		sensors = [sensor_left, sensor_right, 1]
 
 		# Map the sensors to actuators
 		motor_left = mapping_funtion(sensors, sensor_mapping[0])
