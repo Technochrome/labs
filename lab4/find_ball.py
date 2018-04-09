@@ -30,7 +30,7 @@ def find_ball(img=None, debug=False, min_thresh=30, max_thresh=100, blurred=None
 	"""
 
 	# End condition
-	if max_thresh - min_thresh <= 0:
+	if max_thresh - min_thresh <= 1:
 		return None
 
 	blurred = blurred if blurred is not None else cv2.GaussianBlur(img,(5,5),0)
