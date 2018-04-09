@@ -11,6 +11,7 @@ import cozmo
 import cv2
 import numpy as np
 import sys
+import signal
 
 
 def sense_brightness(image, columns):
@@ -29,17 +30,21 @@ def sense_brightness(image, columns):
 
 	return avg_brightness
 
-def mapping_funtion(sensor_value):
+def mapping_funtion(sensor_value, mapping):
 	'''Maps a sensor reading to a wheel motor command'''
-	## TODO: Define the mapping to obtain different behaviors.
-	motor_value = 0.1*sensor_value
-	return motor_value
+	return sum(np.array(sensor_value) * np.array(mapping))
 
 async def braitenberg_machine(robot: cozmo.robot.Robot):
 	'''The core of the braitenberg machine program'''
 	# Move lift down and tilt the head up
 	robot.move_lift(-3)
-	robot.set_head_angle(cozmo.robot.MAX_HEAD_ANGLE).wait_for_completed()
+	robot.set_head_angle((cozmo.robot.MAX_HEAD_ANGLE + cozmo.robot.MIN_HEAD_ANGLE)/2).wait_for_completed()
+
+	args = [float(x) for x in sys.argv[1:]]
+	sensor_mapping = [args[0:2], list(reversed(args[0:2]))]
+	print(sensor_mapping)
+	robot.camera.set_manual_exposure(10, robot.camera.config.min_gain)
+
 	print("Press CTRL-C to quit")
 
 	while True:
@@ -52,27 +57,30 @@ async def braitenberg_machine(robot: cozmo.robot.Robot):
 		# Determine the w/h of the new image
 		h = opencv_image.shape[0]
 		w = opencv_image.shape[1]
-		sensor_n_columns = 20
+		sensor_n_columns = w//2
 
 		# Sense the current brightness values on the right and left of the image.
 		sensor_right = sense_brightness(opencv_image, columns=np.arange(sensor_n_columns))
 		sensor_left = sense_brightness(opencv_image, columns=np.arange(w-sensor_n_columns, w))
-
-		print("sensor_right: " + str(sensor_right))
-		print("sensor_left: " + str(sensor_left))
+		sensors = [sensor_left, sensor_right]
 
 		# Map the sensors to actuators
-		## TODO: You might want to switch which sensor is mapped to which motor.
-		motor_right = mapping_funtion(sensor_left)
-		motor_left = mapping_funtion(sensor_right)
+		motor_left = mapping_funtion(sensors, sensor_mapping[0])
+		motor_right = mapping_funtion(sensors, sensor_mapping[1])
 
-		print("motor_right: " + str(motor_right))
-		print("motor_left: " + str(motor_left))
+		# print("motor_right: " + str(motor_right))
+		# print("motor_left: " + str(motor_left))
+		print(" sensor (%05.1f, %05.1f)   motor(%05.1f, %05.1f)\r" % (sensor_left, sensor_right, motor_left, motor_right), end='', flush=True)
 
 		# Send commands to the robot
-		await robot.drive_wheels(motor_right, motor_left)
+		await robot.drive_wheels(motor_left, motor_right)
 
 		time.sleep(.1)
 
+def signal_handler(signal, frame):
+        print('')
+        sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 cozmo.run_program(braitenberg_machine, use_viewer=True, force_viewer_on_top=True)

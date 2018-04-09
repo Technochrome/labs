@@ -9,8 +9,6 @@ import numpy as np
 # load ground truth
 with open('./imgs/ground_truth.txt') as f:
 	grid_data = [i.split() for i in f.readlines()]
-	 
-print(grid_data)
  
 # thresh hold to accept circle and give credit per circle
 center_err_thresh = 20.0
@@ -26,7 +24,7 @@ for filedata in grid_data:
 	 
 	#try to find the ball in the image
 	ball = find_ball.find_ball(opencv_image)
-	print(file, ball)
+	expected_ball = list(map(int, filedata[1:3]))
 	
 	if ball is None:
 		ball = np.array([0, 0, 0])
@@ -37,9 +35,10 @@ for filedata in grid_data:
 	
 	# get radius err
 	r_err = math.fabs(ball[2] - float(filedata[3]))
-		 
-	print("circle center err =", center_err, "pixel")
-	print("circle radius err =", r_err, "pixel")
+		
+	print("%s:  |%s - %s| = %.1f , |%s - %s| = %.1f" % (
+		file, ball[0:2], expected_ball, center_err,
+		ball[2], filedata[3], r_err))
 	if center_err <= center_err_thresh and r_err <= radius_err_thresh:
 		score += 1;
  
