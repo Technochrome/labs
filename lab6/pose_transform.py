@@ -7,16 +7,58 @@ This is starter code for Lab 6 on Coordinate Frame transforms.
 
 import asyncio
 import cozmo
-import numpy
-from cozmo.util import degrees
+import numpy as np
+from cozmo.util import degrees,Pose,radians
+import time
+from math import sin,cos,asin,acos
+
+def to_mat(tuples, n, m):
+	return np.matrix([tuples[(n*i):(n*(i+1))] for i in range(m)])
+
+def to_matrix(pose):
+	# rx,ry,rz = pose.rotation.euler_angles
+	rx,ry,rz = 0,0,pose.rotation.angle_z.radians
+	RX = np.matrix([ # rot X
+		[1,       0,        0, 0],
+		[0, cos(rx), -sin(rx), 0],
+		[0, sin(rx),  cos(rx), 0],
+		[0,       0,        0, 1]
+	])
+	RY = np.matrix([ # rot Y
+		[ cos(ry), 0, sin(ry), 0],
+		[       0, 1,       0, 0],
+		[-sin(ry), 0, cos(ry), 0],
+		[       0, 0,       0, 1]
+	])
+	RZ = np.matrix([ # rot Z
+		[ cos(rz), -sin(rz), 0, 0],
+		[ sin(rz),  cos(rz), 0, 0],
+	    [       0,        0, 1, 0],
+		[       0,        0, 0, 1]
+	])
+
+	pos = pose.position
+	T = np.matrix([ # move
+		[1,0,0,pos.x],
+		[0,1,0,pos.y],
+		[0,0,1,pos.z],
+		[0,0,0,1]
+	])
+	# print(RX)
+	# print(RY)
+	# print(RZ)
+	return T * RX * RY * RZ
 
 def get_relative_pose(object_pose, refrence_frame_pose):
-	# ####
-	# TODO: Implement computation of the relative frame using numpy.
-	# Try to derive the equations yourself and verify by looking at
-	# the books or slides bfore implementing.
-	# ####
-	return None
+	ref = to_matrix(refrence_frame_pose)
+	obj = to_matrix(object_pose)
+
+	rel = ref.I * obj
+	rz = acos(rel[0,0])
+	if rel[1,0] < 0:   # sin(theta) < 0 -> theta < 0
+		rz = -rz
+
+	return Pose(rel[0,-1], rel[1,-1], rel[2,-1], angle_z=radians(rz))
 
 def find_relative_cube_pose(robot: cozmo.robot.Robot):
 	'''Looks for a cube while sitting still, prints the pose of the detected cube
@@ -30,11 +72,15 @@ def find_relative_cube_pose(robot: cozmo.robot.Robot):
 		try:
 			cube = robot.world.wait_for_observed_light_cube(timeout=30)
 			if cube:
-				print("Robot pose: %s" % robot.pose)
-				print("Cube pose: %s" % cube.pose)
-				print("Cube pose in the robot coordinate frame: %s" % get_relative_pose(cube.pose, robot.pose))
+				print("Robot pose: %s" % (robot.pose,))
+				print("Cube pose: %s" % (cube.pose,))
+				rel = get_relative_pose(cube.pose, robot.pose)
+				print("Cube pose in the robot coordinate frame: %s" % (rel,))
+				print("Calc cube: %s" % (robot.pose.define_pose_relative_this(rel),))
+				print("-" * 20)
 		except asyncio.TimeoutError:
 			print("Didn't find a cube")
+		time.sleep(1)
 
 
 if __name__ == '__main__':
