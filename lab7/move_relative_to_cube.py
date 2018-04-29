@@ -11,9 +11,9 @@ import math
 import time
 import sys
 
-from odometry import cozmo_go_to_pose
+from odometry import cozmo_go_to_pose,my_go_to_pose1
 sys.path.insert(0, '../lab6')
-from pose_transform import get_relative_pose
+from pose_transform import get_relative_pose,get_absolute_pose
 
 def move_relative_to_cube(robot: cozmo.robot.Robot):
 	'''Looks for a cube while sitting still, when a cube is detected it 
@@ -31,14 +31,11 @@ def move_relative_to_cube(robot: cozmo.robot.Robot):
 		except asyncio.TimeoutError:
 			print("Didn't find a cube")
 
-	desired_pose_relative_to_cube = Pose(0, 100, 0, angle_z=degrees(90))
+	desired_pose_relative_to_cube = Pose(0, 150, 0, angle_z=degrees(-90))
+	goal_abs = get_absolute_pose(desired_pose_relative_to_cube, cube.pose)
+	goal = get_relative_pose(goal_abs, robot.pose)
 
-	# ####
-	# TODO: Make the robot move to the given desired_pose_relative_to_cube.
-	# Use the get_relative_pose function your implemented to determine the
-	# desired robot pose relative to the robot's current pose and then use
-	# one of the go_to_pose functions you implemented in Lab 6.
-	# ####
+	my_go_to_pose1(robot, goal.position.x, goal.position.y, goal.rotation.angle_z.degrees)
 
 
 if __name__ == '__main__':

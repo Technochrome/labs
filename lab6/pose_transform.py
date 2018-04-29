@@ -49,16 +49,23 @@ def to_matrix(pose):
 	# print(RZ)
 	return T * RX * RY * RZ
 
-def get_relative_pose(object_pose, refrence_frame_pose):
-	ref = to_matrix(refrence_frame_pose)
-	obj = to_matrix(object_pose)
-
-	rel = ref.I * obj
+def matrix_to_pose(rel):
 	rz = acos(rel[0,0])
 	if rel[1,0] < 0:   # sin(theta) < 0 -> theta < 0
 		rz = -rz
 
 	return Pose(rel[0,-1], rel[1,-1], rel[2,-1], angle_z=radians(rz))
+
+
+def get_relative_pose(object_pose, refrence_frame_pose):
+	ref,obj = [to_matrix(x) for x in [refrence_frame_pose, object_pose]]
+
+	return matrix_to_pose(ref.I * obj)
+
+def get_absolute_pose(rel_object_pose, refrence_frame_pose):
+	ref,obj = [to_matrix(x) for x in [refrence_frame_pose, rel_object_pose]]
+
+	return matrix_to_pose(ref * obj)
 
 def find_relative_cube_pose(robot: cozmo.robot.Robot):
 	'''Looks for a cube while sitting still, prints the pose of the detected cube

@@ -6,7 +6,7 @@ Stater code for Lab 7.
 '''
 
 import cozmo
-from cozmo.util import degrees, Angle, Pose, distance_mm, speed_mmps
+from cozmo.util import degrees,radians, Angle, Pose, distance_mm, speed_mmps
 import math
 import time
 
@@ -43,23 +43,25 @@ def cozmo_go_to_pose(robot, x, y, angle_z):
 
 def get_front_wheel_radius():
 	"""Returns the radius of the Cozmo robot's front wheel in millimeters."""
-	# ####
-	# TODO: Empirically determine the radius of the robot's front wheel using the
-	# cozmo_drive_straight() function. You can write a separate script for doing 
-	# experiments to determine the radius. This function should return the radius
-	# in millimeters. Write a comment that explains how you determined it and any
-	# computation you do as part of this function.
-	# ####
-	pass
+	# I ran the following code
+	#   cozmo_drive_straight(robot, 3.14 * 2 * 50, 30)
+	# and I counted 13 rotations of 120 deg (the wheels have three radial marks)
+	# Thus, 13/3 rotations takes you pi * 2 * r * (13/3) = pi * 2 * 50 mm
+	#  so r = 50 * (3/13)
+	return (50 * 3) / 13
 
 def get_distance_between_wheels():
 	"""Returns the distance between the wheels of the Cozmo robot in millimeters."""
-	# ####
-	# TODO: Empirically determine the distance between the wheels of the robot using
-	# robot.drive_wheels() function. Write a comment that explains how you determined
-	# it and any computation you do as part of this function.
-	# ####
-	pass
+
+	# Running the following code
+	#   s = 20 * 3.14
+	#   robot.drive_wheels(s, -s, duration=10)
+	# the robot spins 2.25 times.
+	# Since  speed * time = pi * 20 * 10 = distance = pi * rotations * d 
+	# d = 200 / 2.25 ~= 88
+	# However, I can measure d as ~45mm, so I'm missing a factor of 2 somewhere
+	return 200 / 2.25 / 2
+DEG_PER_MM = 2.25 * 360 / (200 * 3.14) # deg/(mm/s * s)
 
 def rotate_back_wheel(robot, angle_deg):
 	"""Rotates the back wheel of the robot by a desired angle.
@@ -78,11 +80,11 @@ def my_drive_straight(robot, dist, speed):
 		dist -- Desired distance of the movement in millimeters
 		speed -- Desired speed of the movement in millimeters per second
 	"""
-	# ####
-	# TODO: Implement your version of a driving straight function using the
-	# robot.drive_wheels() function.
-	# ####
-	pass
+	if dist < 0:
+		sign = -1
+	else:
+		sign = 1
+	robot.drive_wheels(sign * speed, sign * speed, duration = sign * dist/speed)
 
 def my_turn_in_place(robot, angle, speed):
 	"""Rotates the robot in place.
@@ -91,11 +93,14 @@ def my_turn_in_place(robot, angle, speed):
 		angle -- Desired distance of the movement in degrees
 		speed -- Desired speed of the movement in degrees per second
 	"""
-	# ####
-	# TODO: Implement your version of a rotating in place function using the
-	# robot.drive_wheels() function.
-	# ####
-	pass
+	if angle < 0:
+		sign = -1
+	else:
+		sign = 1
+	# deg/s = deg/mm * mm/s,   mm/s = (deg/s) / (deg/mm)
+	s = sign * speed / DEG_PER_MM
+	warm_up_time = 0.8   # The warm up appears to be necessary for small angles
+	robot.drive_wheels(-s, s, duration = sign * angle / speed + warm_up_time)
 
 def my_go_to_pose1(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
@@ -104,13 +109,14 @@ def my_go_to_pose1(robot, x, y, angle_z):
 		x,y -- Desired position of the robot in millimeters
 		angle_z -- Desired rotation of the robot around the vertical axis in degrees
 	"""
-	# ####
-	# TODO: Implement a function that makes the robot move to a desired pose
-	# using the my_drive_straight and my_turn_in_place functions. This should
-	# include a sequence of turning in place, moving straight, and then turning
-	# again at the target to get to the desired rotation (Approach 1).
-	# ####
-	pass
+
+	angle = radians(math.atan2(y,x)).degrees
+	my_turn_in_place(robot, angle, 60)
+	time.sleep(1)
+	my_drive_straight(robot, math.sqrt(x*x + y*y), 50)
+	time.sleep(1)
+	my_turn_in_place(robot, angle_z - angle, 60)
+	time.sleep(1)
 
 def my_go_to_pose2(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
@@ -145,19 +151,21 @@ def run(robot: cozmo.robot.Robot):
 	print("***** Back wheel radius: " + str(get_front_wheel_radius()))
 	print("***** Distance between wheels: " + str(get_distance_between_wheels()))
 
+
 	## Example tests of the functions
 
-	cozmo_drive_straight(robot, 62, 50)
-	cozmo_turn_in_place(robot, 60, 30)
-	cozmo_go_to_pose(robot, 100, 100, 45)
+	# cozmo_drive_straight(robot, 62, 50)
+	# cozmo_turn_in_place(robot, 45, 30)
+	# cozmo_go_to_pose(robot, 100, 100, 45)
 
-	rotate_back_wheel(robot, 90)
-	my_drive_straight(robot, 62, 50)
-	my_turn_in_place(robot, 90, 30)
+	# rotate_back_wheel(robot, 90)
+	# my_drive_straight(robot, 62, 50)
+	# my_turn_in_place(robot, 45, 30)
 
-	my_go_to_pose1(robot, 100, 100, 45)
-	my_go_to_pose2(robot, 100, 100, 45)
-	my_go_to_pose3(robot, 100, 100, 45)
+	cozmo_go_to_pose(robot, 300, 100, 0)
+	# my_go_to_pose1(robot, -100, -100, 45)
+	# my_go_to_pose2(robot, 100, 100, 45)
+	# my_go_to_pose3(robot, 100, 100, 45)
 
 
 if __name__ == '__main__':
