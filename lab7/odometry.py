@@ -118,6 +118,9 @@ def my_go_to_pose1(robot, x, y, angle_z):
 	my_turn_in_place(robot, angle_z - angle, 60)
 	time.sleep(1)
 
+def delta(x, y, robot):
+	return (dest_x - robot.pose.position.x, dest_y - robot.pose.position.y)
+
 def my_go_to_pose2(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
 		Arguments:
@@ -125,6 +128,16 @@ def my_go_to_pose2(robot, x, y, angle_z):
 		x,y -- Desired position of the robot in millimeters
 		angle_z -- Desired rotation of the robot around the vertical axis in degrees
 	"""
+	dest_x = x + robot.pose.position.x
+	dest_y = y + robot.pose.position.y
+	while(1):
+		dx, dy = delta(dest_x, dest_y, robot)
+		theta_r = robot.pose.rotation.angle_z.degrees
+		p = math.sqrt( dx ** 2 + dy ** 2)
+		a = theta_r - math.atan2(dy,dx)
+		n = angle_z - theta_r
+
+
 	# ####
 	# TODO: Implement a function that makes the robot move to a desired pose
 	# using the robot.drive_wheels() function to jointly move and rotate the 
