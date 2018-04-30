@@ -57,7 +57,6 @@ def matrix_to_pose(rel):
 	return Pose(rel[0,-1], rel[1,-1], rel[2,-1], angle_z=radians(rz))
 
 
-<<<<<<< HEAD
 def get_relative_pose(object_pose, refrence_frame_pose):
 	ref,obj = [to_matrix(x) for x in [refrence_frame_pose, object_pose]]
 
@@ -67,15 +66,6 @@ def get_absolute_pose(rel_object_pose, refrence_frame_pose):
 	ref,obj = [to_matrix(x) for x in [refrence_frame_pose, rel_object_pose]]
 
 	return matrix_to_pose(ref * obj)
-=======
-def get_relative_pose(object_pose, reference_frame_pose):
-	# ####
-	# TODO: Implement computation of the relative frame using numpy.
-	# Try to derive the equations yourself and verify by looking at
-	# the books or slides before implementing.
-	# ####
-	return None
->>>>>>> origin/master
 
 def find_relative_cube_pose(robot: cozmo.robot.Robot):
 	'''Looks for a cube while sitting still, prints the pose of the detected cube
