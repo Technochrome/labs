@@ -63,16 +63,22 @@ def get_distance_between_wheels():
 	return 200 / 2.25 / 2
 DEG_PER_MM = 2.25 * 360 / (200 * 3.14) # deg/(mm/s * s)
 
-def rotate_front_wheel(robot, angle_deg):
+def rotate_front_wheel(robot, angle):
 	"""Rotates the front wheel of the robot by a desired angle.
 		Arguments:
 		robot -- the Cozmo robot instance passed to the function
 		angle_deg -- Desired rotation of the wheel in degrees
 	"""
-	# ####
-	# TODO: Implement this function.
-	# ####
-	pass
+	speed = 90
+	if angle < 0:
+		sign = -1
+	else:
+		sign = 1
+	# deg/s = deg/mm * mm/s,   mm/s = (deg/s) / (deg/mm)
+	s = sign * speed / DEG_PER_MM
+	p = 15
+	warm_up_time = 0.8   # The warm up appears to be necessary for small angles
+	robot.drive_wheels(-s + p, s + p, duration = sign * angle / speed + warm_up_time)
 
 def my_drive_straight(robot, dist, speed):
 	"""Drives the robot straight.
@@ -120,7 +126,10 @@ def my_go_to_pose1(robot, x, y, angle_z):
 	time.sleep(1)
 
 def delta(x, y, robot):
-	return (dest_x - robot.pose.position.x, dest_y - robot.pose.position.y)
+	return (x - robot.pose.position.x, y - robot.pose.position.y)
+
+def clamp(n_min, n, n_max):
+	return min(max(n, n_min), n_max)
 
 def my_go_to_pose2(robot, x, y, angle_z):
 	"""Moves the robot to a pose relative to its current pose.
@@ -131,17 +140,47 @@ def my_go_to_pose2(robot, x, y, angle_z):
 	"""
 	dest_x = x + robot.pose.position.x
 	dest_y = y + robot.pose.position.y
+
+
 	while(1):
 		dx, dy = delta(dest_x, dest_y, robot)
 		theta_r = robot.pose.rotation.angle_z.degrees
+
 		p = math.sqrt( dx ** 2 + dy ** 2)
-		a = theta_r - math.atan2(dy,dx)
+		a = theta_r - radians(math.atan2(dy,dx)).degrees
 		n = angle_z - theta_r
 
+		bp = p < 40
+		bn = abs(n) < 15
+		if bp and bn:
+			return
+
+		# Normalize turn to goal angle to the shortest path
+		if n > 180:
+			n -= 360
+		elif n < -180:
+			n += 360
+
+		# Normalize drive to goal to not do a 180
+		if a > 90:
+			a -= 180
+			p *= -1
+		elif a < -90:
+			a += 180
+			p *= -1
+
+		t = 100
+		if (abs(p) < t):
+			a *= (abs(p)/t)
+			n *= 1 - (abs(p)/t)
+		else:
+			n = 0
+
 		v = 0.5 * p
-		theta = 1.0 * (1.0 * a +  1.0 * n)
+		theta = 1.0 * (1.0 * a  -  1.0 * n)
 		l,r = v + theta , v - theta
-		robot.drive_wheels(l, r, duration = 0.1)
+		robot.drive_wheels(l, r, duration = 0.2)
+		print("%8.2f,%8.2f   %7.2f,%7.2f,%7.2f  %8.2f,%8.2f  %s,%s" % (dx,dy, p,a,n, l,r,  bp,bn))
 
 
 	# ####
@@ -158,12 +197,31 @@ def my_go_to_pose3(robot, x, y, angle_z):
 		x,y -- Desired position of the robot in millimeters
 		angle_z -- Desired rotation of the robot around the vertical axis in degrees
 	"""
-	# ####
-	# TODO: Implement a function that makes the robot move to a desired pose
-	# as fast as possible. You can experiment with the built-in Cozmo function
-	# (cozmo_go_to_pose() above) to understand its strategy and do the same.
-	# ####
-	pass
+	dest_x = x + robot.pose.position.x
+	dest_y = y + robot.pose.position.y
+
+	dist = 100
+	while(dist > 20):
+		dx, dy = delta(dest_x, dest_y, robot)
+		theta_r = robot.pose.rotation.angle_z.degrees
+
+		dist = p = math.sqrt( dx ** 2 + dy ** 2)
+		p = clamp(250, p, 300)
+		a = theta_r - radians(math.atan2(dy,dx)).degrees
+
+		# Normalize drive to goal to not do a 180
+		if a > 90:
+			a -= 180
+			p *= -1
+		elif a < -90:
+			a += 180
+			p *= -1
+
+		v = 0.5 * p
+		theta = 1.0 * a
+		l,r = v + theta , v - theta
+		robot.drive_wheels(l, r, duration = 0.2)
+	my_turn_in_place(robot, angle_z - robot.pose.rotation.angle_z.degrees, 90)
 
 def run(robot: cozmo.robot.Robot):
 
@@ -177,14 +235,15 @@ def run(robot: cozmo.robot.Robot):
 	# cozmo_turn_in_place(robot, 45, 30)
 	# cozmo_go_to_pose(robot, 100, 100, 45)
 
-	# rotate_back_wheel(robot, 90)
+	rotate_front_wheel(robot, 90)
 	# my_drive_straight(robot, 62, 50)
 	# my_turn_in_place(robot, 45, 30)
 
 	# cozmo_go_to_pose(robot, 300, 100, 0)
 	# my_go_to_pose1(robot, -100, -100, 45)
-	my_go_to_pose2(robot, 100, 100, 45)
-	# my_go_to_pose3(robot, 100, 100, 45)
+	# my_go_to_pose2(robot, 500, 300, 130)
+	# my_go_to_pose2(robot, 0, 0, -130)
+	# my_go_to_pose3(robot, 300, 250, 180)
 
 
 if __name__ == '__main__':
