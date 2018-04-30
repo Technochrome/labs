@@ -63,8 +63,8 @@ def get_distance_between_wheels():
 	return 200 / 2.25 / 2
 DEG_PER_MM = 2.25 * 360 / (200 * 3.14) # deg/(mm/s * s)
 
-def rotate_back_wheel(robot, angle_deg):
-	"""Rotates the back wheel of the robot by a desired angle.
+def rotate_front_wheel(robot, angle_deg):
+	"""Rotates the front wheel of the robot by a desired angle.
 		Arguments:
 		robot -- the Cozmo robot instance passed to the function
 		angle_deg -- Desired rotation of the wheel in degrees
@@ -72,6 +72,7 @@ def rotate_back_wheel(robot, angle_deg):
 	# ####
 	# TODO: Implement this function.
 	# ####
+	pass
 
 def my_drive_straight(robot, dist, speed):
 	"""Drives the robot straight.
@@ -137,6 +138,11 @@ def my_go_to_pose2(robot, x, y, angle_z):
 		a = theta_r - math.atan2(dy,dx)
 		n = angle_z - theta_r
 
+		v = 0.5 * p
+		theta = 1.0 * (1.0 * a +  1.0 * n)
+		l,r = v + theta , v - theta
+		robot.drive_wheels(l, r, duration = 0.1)
+
 
 	# ####
 	# TODO: Implement a function that makes the robot move to a desired pose
@@ -161,7 +167,7 @@ def my_go_to_pose3(robot, x, y, angle_z):
 
 def run(robot: cozmo.robot.Robot):
 
-	print("***** Back wheel radius: " + str(get_front_wheel_radius()))
+	print("***** Front wheel radius: " + str(get_front_wheel_radius()))
 	print("***** Distance between wheels: " + str(get_distance_between_wheels()))
 
 
@@ -175,9 +181,9 @@ def run(robot: cozmo.robot.Robot):
 	# my_drive_straight(robot, 62, 50)
 	# my_turn_in_place(robot, 45, 30)
 
-	cozmo_go_to_pose(robot, 300, 100, 0)
+	# cozmo_go_to_pose(robot, 300, 100, 0)
 	# my_go_to_pose1(robot, -100, -100, 45)
-	# my_go_to_pose2(robot, 100, 100, 45)
+	my_go_to_pose2(robot, 100, 100, 45)
 	# my_go_to_pose3(robot, 100, 100, 45)
 
 
