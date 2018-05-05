@@ -2,6 +2,8 @@ from grid import *
 from particle import Particle
 from utils import *
 from setting import *
+from math import sin,cos
+import random
 
 
 def motion_update(particles, odom):
@@ -15,8 +17,16 @@ def motion_update(particles, odom):
         Returns: the list of particles represents belief \tilde{p}(x_{t} | u_{t})
                 after motion update
     """
-    motion_particles = []
-    return motion_particles
+    def move(p, odom):
+        dx,dy,dh = odom
+        dx,dy = rotate_point(dx, dy, p.h)
+        return Particle(
+            p.x + dx,
+            p.y + dy,
+            diff_heading_deg(p.h, -dh)
+        )
+
+    return [move(p, add_odometry_noise(odom, ODOM_HEAD_SIGMA, ODOM_TRANS_SIGMA)) for p in particles]
 
 # ------------------------------------------------------------------------
 def measurement_update(particles, measured_marker_list, grid):
@@ -43,7 +53,13 @@ def measurement_update(particles, measured_marker_list, grid):
         Returns: the list of particles represents belief p(x_{t} | u_{t})
                 after measurement update
     """
-    measured_particles = []
-    return measured_particles
+    filtered = [p for p in particles if p.x <= grid.width and p.x >= 0 and p.y <= grid.height and p.y >= 0]
+    random.shuffle(filtered)
+    if len(filtered) == 0:
+        filtered = particles
+    else:
+        while (len(filtered) < len(particles)):
+            filtered.extend(filtered[0:min(len(filtered), len(particles) - len(filtered))])
+    return filtered
 
 
