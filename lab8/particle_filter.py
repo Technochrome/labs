@@ -81,13 +81,13 @@ def measurement_update(particles, measured_marker_list, grid):
             p.measures = closeness(measured_marker_list, rel_markers)
 
         c = sum([a[0] for a in p.measures])
-        return [p] * int(10 - 2.0 * c)
+        return [p] * max(int(100/(1 + c)), 1)
 
 
-    filtered = [p for p in particles if keep(p)]
+    filtered = particles #[p for p in particles if keep(p)]
 
-    choices = [e for p in filtered for e in expand(p)] + \
-              [Particle(random.uniform(0,grid.width), random.uniform(0,grid.height), random.uniform(-180, 180)) for _ in range(len(particles)//10)]
+    choices = [e for p in filtered for e in expand(p)]
+    # choices += [Particle(random.uniform(0,grid.width), random.uniform(0,grid.height), random.uniform(-180, 180)) for _ in range(len(choices)//200)]
 
     ret = []
     for _ in particles:
