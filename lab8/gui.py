@@ -82,17 +82,27 @@ class GUIWindow():
             p = particles[int(idx)]
             coord = (p.x,p.y)
             # print((p.x,p.y))
-            self.colorCircle(coord, '#FF0000', 2)
+            color = getattr(p, 'color', '#FF0000')
+            self.colorCircle(coord, color, 3)
             ldx, ldy = rotate_point(line_length, 0, p.h)
             self.colorLine(coord, (coord[0]+ldx, coord[1]+ldy))
+            if hasattr(p, 'measures'):
+                for m in p.measures:
+                    p1 = rotate_point(*m[1][0:2], p.h)
+                    p2 = rotate_point(*m[2][0:2], p.h)
+                    color = '#%2x%2x%2x' % (min(int(0x50 * m[0]), 0xff), min(int(0x10 * m[0]), 0xff), min(int(0x5 * m[0]), 0xff))
+                    # self.colorLine(coord, (coord[0] + p1[0], coord[1] + p1[1]))
+
+                    self.colorCircle((coord[0] + p1[0], coord[1] + p1[1]), color, 3)
+                    self.colorLine((coord[0] + p1[0], coord[1] + p1[1]) ,(coord[0] + p2[0], coord[1] + p2[1]))
             idx += draw_skip
 
     def _show_robot(self, robot):
         coord = (robot.x, robot.y)
         self.colorTriangle(coord, robot.h, '#FF0000', tri_size=15)
         # plot fov
-        fov_lx, fov_ly = rotate_point(8, 0, robot.h + ROBOT_CAMERA_FOV_DEG / 2)
-        fov_rx, fov_ry = rotate_point(8, 0, robot.h - ROBOT_CAMERA_FOV_DEG / 2)
+        fov_lx, fov_ly = rotate_point(15, 0, robot.h + ROBOT_CAMERA_FOV_DEG / 2)
+        fov_rx, fov_ry = rotate_point(15, 0, robot.h - ROBOT_CAMERA_FOV_DEG / 2)
         self.colorLine(coord, (coord[0]+fov_lx, coord[1]+fov_ly), color='#222222', linewidth=2, dashed=True)
         self.colorLine(coord, (coord[0]+fov_rx, coord[1]+fov_ry), color='#222222', linewidth=2, dashed=True)
 

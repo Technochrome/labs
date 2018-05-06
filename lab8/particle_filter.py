@@ -53,13 +53,44 @@ def measurement_update(particles, measured_marker_list, grid):
         Returns: the list of particles represents belief p(x_{t} | u_{t})
                 after measurement update
     """
-    filtered = [p for p in particles if p.x <= grid.width and p.x >= 0 and p.y <= grid.height and p.y >= 0]
-    random.shuffle(filtered)
-    if len(filtered) == 0:
-        filtered = particles
-    else:
-        while (len(filtered) < len(particles)):
-            filtered.extend(filtered[0:min(len(filtered), len(particles) - len(filtered))])
-    return filtered
+    markers = [parse_marker_info(m[0], m[1], m[2]) for m in grid.markers]
 
+    def dist(*args):
+        return math.sqrt(sum([x*float(x) for x in args]))
+
+    def closeness(m1,m2):
+        s = []
+        for p1 in m1:   # Find closest marker
+            s.append(min([(dist(p1[0] - p2[0], p1[1] - p2[1]), p1,p2) for p2 in m2]))
+        return s
+
+
+    def keep(p):
+        if not (-.5 <= p.x <= grid.width + .5 and -.5 <= p.y <= grid.height + .5):
+            return False
+        return True
+
+    def expand(p):
+        rel_markers = [rotate_point(m[0] - p.x, m[1] - p.y, -p.h) for m in markers]
+        vis_markers = [m for m in rel_markers if abs(m[1]) + 2 < m[0] ] # |y| < x
+
+        # len(distances) = max( len(m_a), len(m_b))
+        if len(measured_marker_list) < len(vis_markers):
+            p.measures = closeness(vis_markers, measured_marker_list + [(0,0,0)])
+        else:
+            p.measures = closeness(measured_marker_list, rel_markers)
+
+        c = sum([a[0] for a in p.measures])
+        return [p] * int(10 - 2.0 * c)
+
+
+    filtered = [p for p in particles if keep(p)]
+
+    choices = [e for p in filtered for e in expand(p)] + \
+              [Particle(random.uniform(0,grid.width), random.uniform(0,grid.height), random.uniform(-180, 180)) for _ in range(len(particles)//10)]
+
+    ret = []
+    for _ in particles:
+        ret.append(random.choice(choices))
+    return ret
 
