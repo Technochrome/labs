@@ -65,14 +65,9 @@ def measurement_update(particles, measured_marker_list, grid):
         return s
 
 
-    def keep(p):
-        if not (-.5 <= p.x <= grid.width + .5 and -.5 <= p.y <= grid.height + .5):
-            return False
-        return True
-
     def expand(p):
         rel_markers = [rotate_point(m[0] - p.x, m[1] - p.y, -p.h) for m in markers]
-        vis_markers = [m for m in rel_markers if abs(m[1]) + 2 < m[0] ] # |y| < x
+        vis_markers = [m for m in rel_markers if abs(m[1]) + 2 < m[0] ] # |y| + 2 < x
 
         # len(distances) = max( len(m_a), len(m_b))
         if len(measured_marker_list) < len(vis_markers):
@@ -81,13 +76,12 @@ def measurement_update(particles, measured_marker_list, grid):
             p.measures = closeness(measured_marker_list, rel_markers)
 
         c = sum([a[0] for a in p.measures])
-        return [p] * max(int(100/(1 + c)), 1)
+        weight = max(int(100/(1 + c)), 1)
+        p.color = "#%02x0000" % (int(weight * (0xFF/100)))
+        return [p] * weight
 
 
-    filtered = particles #[p for p in particles if keep(p)]
-
-    choices = [e for p in filtered for e in expand(p)]
-    # choices += [Particle(random.uniform(0,grid.width), random.uniform(0,grid.height), random.uniform(-180, 180)) for _ in range(len(choices)//200)]
+    choices = [e for p in particles for e in expand(p)]
 
     ret = []
     for _ in particles:
