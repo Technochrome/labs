@@ -18,24 +18,23 @@ def astar(grid, heuristic):
         grid -- CozGrid instance to perform search on
         heuristic -- supplied heuristic function
     """
-    goal = grid.getGoals()[0]
     visitQueue = PriorityQueue()
-    visitQueue.put((0, 0, [grid.getStart()]))
-    grid.addVisited(grid.getStart())
+    visitQueue.put((0, 0, grid.getStart(), []))
 
     while not visitQueue.empty():
-        estimated_cost, src_cost, path = visitQueue.get()
-        src_coord = path[-1]
-        for coord, inc_cost in grid.getNeighbors(src_coord):
-            if coord not in grid.getVisited():
-                grid.addVisited(coord)
+        _, src_cost, src_coord, src_path = visitQueue.get()
+        if src_coord not in grid.getVisited():
+            path = src_path + [src_coord]
+            if src_coord in grid.getGoals():
+                grid.setPath(path)
+                return
+            grid.addVisited(src_coord)
 
-                dst_path = path + [coord]
+            for dst_coord, inc_cost in grid.getNeighbors(src_coord):
                 dst_cost = src_cost + inc_cost
-                if coord == goal:
-                    grid.setPath(dst_path)
-                    return
-                visitQueue.put((dst_cost + heuristic(coord, goal), dst_cost, dst_path))
+                est_cost = min([heuristic(dst_coord, goal) for goal in grid.getGoals()])
+
+                visitQueue.put((dst_cost + est_cost, dst_cost, dst_coord, path))
 
 
 
