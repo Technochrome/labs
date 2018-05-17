@@ -18,8 +18,25 @@ def astar(grid, heuristic):
         grid -- CozGrid instance to perform search on
         heuristic -- supplied heuristic function
     """
-        
-    pass # Your code here
+    goal = grid.getGoals()[0]
+    visitQueue = PriorityQueue()
+    visitQueue.put((0, 0, [grid.getStart()]))
+    grid.addVisited(grid.getStart())
+
+    while not visitQueue.empty():
+        estimated_cost, src_cost, path = visitQueue.get()
+        src_coord = path[-1]
+        for coord, inc_cost in grid.getNeighbors(src_coord):
+            if coord not in grid.getVisited():
+                grid.addVisited(coord)
+
+                dst_path = path + [coord]
+                dst_cost = src_cost + inc_cost
+                if coord == goal:
+                    grid.setPath(dst_path)
+                    return
+                visitQueue.put((dst_cost + heuristic(coord, goal), dst_cost, dst_path))
+
 
 
 def heuristic(current, goal):
@@ -29,8 +46,10 @@ def heuristic(current, goal):
         current -- current cell
         goal -- desired goal cell
     """
-        
-    return 1 # Your code here
+    dists = [abs(a-b) for a,b in zip(current,goal)]
+    linear_dist = max(dists) - min(dists)
+    diagonal_dist = min(dists) * math.sqrt(2)
+    return linear_dist + diagonal_dist
 
 
 def cozmoBehavior(robot: cozmo.robot.Robot):
