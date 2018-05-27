@@ -64,9 +64,47 @@ def cozmoBehavior(robot: cozmo.robot.Robot):
     """
         
     global grid, stopevent
+    robot.set_head_angle(cozmo.util.degrees(0)).wait_for_completed()
     
+    robot.world.wait_until_num_objects_visible(1)
+    cube = [c for c in robot.world.connected_light_cubes if c.is_visible][0].pose.position
+    print(cube, to_grid(cube.x, cube.y, grid))
+    grid.addGoal(to_grid(cube.x, cube.y, grid))
+
+    astar(grid, heuristic)
+    path = [from_grid(pos[0], pos[1], grid) for pos in compress_path(grid.getPath())]
+    for x,y in path[1:]:
+        robot.go_to_pose(cozmo.util.pose_z_angle(x,y,0, cozmo.util.degrees(0))).wait_for_completed()
     while not stopevent.is_set():
-        pass # Your code here
+        # has_in_progress_actions
+        pass
+
+def to_grid(x, y, grid):
+    s = grid.getStart()
+    return (x // 20 + s[0], y // 20 + s[1])
+
+def from_grid(x, y, grid):
+    s = grid.getStart()
+    return ((x - s[0]) * 20, (y - s[1]) * 20)
+
+def get_actions(path):
+    curr_dir = cozmo.util.degress(0)
+    actions = []
+    for prev, curr in zip(path, path[1:]):
+        new_dir = cozmo.util.radians(math.atan2(curr[0] - prev[0], curr[1] - prev[1]))
+        actions.append((new_dir - curr_dir, ))
+
+def compress_path(path):
+    curr_dir = (0, 0)
+    c_path = []
+    for prev, curr in zip(path, path[1:]):
+        dir = (curr[0] - prev[0], curr[1] - prev[1])
+        if dir != curr_dir:
+            curr_dir = dir
+            c_path.append(prev)
+    c_path.append(path[-1])
+    return c_path
+
 
 
 ######################## DO NOT MODIFY CODE BELOW THIS LINE ####################################

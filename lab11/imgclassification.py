@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 ##############
-#### Your name:
+#### Your name: John Pender
 ##############
 
 import numpy as np
@@ -36,10 +36,8 @@ class ImageClassifier:
         # Please do not modify the header above
 
         # extract feature vector from image data
-
-        ########################
-        ######## YOUR CODE HERE
-        ########################
+        gray_imgs = [color.rgb2gray(img) for img in data]
+        feature_data = [feature.hog(img, feature_vector=True) for img in gray_imgs]
         
         # Please do not modify the return type below
         return(feature_data)
@@ -49,9 +47,12 @@ class ImageClassifier:
         
         # train model and save the trained model to self.classifier
         
-        ########################
-        ######## YOUR CODE HERE
-        ########################
+        print(len(train_data[0]))
+
+        classifier = svm.SVC(class_weight='balanced')
+        classifier.fit(train_data, train_labels)
+        print(train_labels, classifier.predict(train_data))
+        self.classifier = classifier
 
     def predict_labels(self, data):
         # Please do not modify the header
@@ -59,9 +60,7 @@ class ImageClassifier:
         # predict labels of test data using trained model in self.classifier
         # the code below expects output to be stored in predicted_labels
         
-        ########################
-        ######## YOUR CODE HERE
-        ########################
+        predicted_labels = self.classifier.predict(data)
         
         # Please do not modify the return type below
         return predicted_labels
