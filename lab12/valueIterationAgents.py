@@ -43,17 +43,25 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
 
-        # Write value iteration code here
-        for state in mdp.getStates():
-          self.values[state] = 0.5
-        print(self.values)
+        for i in range(iterations):
+          next_values = util.Counter()
+          for state in mdp.getStates():
+            if not mdp.isTerminal(state):
+              action_values = []
+              for action in mdp.getPossibleActions(state):
+                action_value = 0
+                for tstate,prob in mdp.getTransitionStatesAndProbs(state, action):
+                  action_value += prob * mdp.getReward(state,action, tstate)
+                  action_value += prob * discount * self.values[tstate]
+                action_values.append(action_value)
+              next_values[state] = max(action_values)
+          self.values = next_values
 
 
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
         """
-        print(state)
         return self.values[state]
 
 
@@ -62,8 +70,11 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        action_value = 0
+        for tstate,prob in self.mdp.getTransitionStatesAndProbs(state, action):
+          action_value += prob * self.mdp.getReward(state,action, tstate)
+          action_value += prob * discount * self.values[tstate]
+        return action_value
 
     def computeActionFromValues(self, state):
         """
@@ -74,8 +85,10 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        actions = self.mdp.getPossibleActions(state)
+        if len(actions) == 0:
+          return None
+        return actions[0]
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
