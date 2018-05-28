@@ -66,7 +66,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         action_value = 0
         for tstate,prob in self.mdp.getTransitionStatesAndProbs(state, action):
           action_value += prob * self.mdp.getReward(state,action, tstate)
-          action_value += prob * discount * self.values[tstate]
+          action_value += prob * self.discount * self.values[tstate]
         return action_value
 
     def computeActionFromValues(self, state):
@@ -81,7 +81,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         actions = self.mdp.getPossibleActions(state)
         if len(actions) == 0:
           return None
-        return actions[0]
+        return max([(self.computeQValueFromValues(state, action), action) for action in actions])[1]
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
